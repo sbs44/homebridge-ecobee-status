@@ -143,7 +143,13 @@ export class AwaySwitchAccessory {
 			const selectionMatch = this.platform.config.thermostatSerialNumbers || '';
 			const selectionType = selectionMatch ? 'thermostats' : 'registered';
 	
-			// Use setHold for all states (including home) to override built-in schedule
+			// Use setHold for all states (EXCLUDING home) as to _NOT_ override built-in schedule
+			
+			let theType = "setHold";
+	 		if (climateRef === "home") {
+	     			theType = "resumeProgram"
+	 		} 
+			
 			const setHoldBody = {
 				'selection': {
 					'selectionType': selectionType,
@@ -151,7 +157,7 @@ export class AwaySwitchAccessory {
 				},
 				'functions': [
 					{
-						'type': 'setHold',
+						'type': 'theType',
 						'params': {
 							'holdType': 'indefinite',
 							'holdClimateRef': climateRef,
