@@ -274,11 +274,26 @@ export class AwaySwitchAccessory {
       const authToken = AuthTokenManager.getInstance().authToken;
 
       try {
+        // Use configured thermostat serial numbers when provided so we query the correct thermostat
+        const selectionMatch = (this.platform.config as any).thermostatSerialNumbers || '';
+        const selectionType = selectionMatch ? 'thermostats' : 'registered';
+
+        const body = {
+          selection: {
+            selectionType,
+            selectionMatch,
+            includeEvents: true,
+          },
+        };
+
+        // Log which selection is being queried so users with multiple thermostats can see what's polled
+        try {
+          this.platform.log.info(`Querying Ecobee thermostats - selectionType=${selectionType}, selectionMatch=${selectionMatch}`);
+        } catch (err) {
+          // ignore logging failures
+        }
         const queryRequest = await this.makeEcobeeRequest(
-          () => axios.get(
-            'https://api.ecobee.com/1/thermostat?format=json&body={"selection":{"selectionType":"registered","selectionMatch":"","includeEvents":true}}',
-            { headers: { 'Authorization': 'Bearer ' + authToken } },
-          ),
+          () => axios.get('https://api.ecobee.com/1/thermostat?format=json&body=' + encodeURIComponent(JSON.stringify(body)), { headers: { 'Authorization': 'Bearer ' + authToken } }),
           'status check',
         );
         const queryData = queryRequest.data;
@@ -288,7 +303,10 @@ export class AwaySwitchAccessory {
           return this.CLIMATE_HOME;
         }
 
-        const events = queryData.thermostatList[0].events;
+        // If multiple thermostats are returned (registered selection), fall back to the first one.
+        // When a specific serial is requested, the thermostatList should contain only the matching thermostat.
+        const thermostat = queryData.thermostatList[0];
+        const events = thermostat.events || [];
 
         if (events.length > 0) {
           const mostRecentEvent = events[0];
