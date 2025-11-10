@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.13] - 2025-11-10
+
+### Fixed
+- Status polling now correctly respects configured thermostat serial numbers instead of always using the first thermostat
+- Fixed API request encoding for thermostat selection
+- Improved code quality and type safety
+
 ## [2.1.12] - 2025-07-22
 
 ### Fixed

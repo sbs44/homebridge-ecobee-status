@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Ecobee Status",
   "name": "homebridge-ecobee-status",
-  "version": "2.1.12",
+  "version": "2.1.13",
   "description": "Homebridge plugin to control Ecobee thermostat Home/Away/Sleep status through HomeKit security system interface",
   "author": "Spencer S",
   "license": "Apache-2.0",
