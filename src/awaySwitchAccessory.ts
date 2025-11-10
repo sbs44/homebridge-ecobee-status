@@ -274,11 +274,23 @@ export class AwaySwitchAccessory {
       const authToken = AuthTokenManager.getInstance().authToken;
 
       try {
+        // Use configured thermostat serial numbers when provided so we query the correct thermostat
+        const selectionMatch = this.platform.config.thermostatSerialNumbers || '';
+        const selectionType = selectionMatch ? 'thermostats' : 'registered';
+
+        const body = {
+          selection: {
+            selectionType,
+            selectionMatch,
+            includeEvents: true,
+          },
+        };
+
+        // Log which selection is being queried so users with multiple thermostats can see what's polled
+        this.platform.log.debug(`Querying Ecobee thermostats - selectionType=${selectionType}, selectionMatch=${selectionMatch}`);
+
         const queryRequest = await this.makeEcobeeRequest(
-          () => axios.get(
-            'https://api.ecobee.com/1/thermostat?format=json&body={"selection":{"selectionType":"registered","selectionMatch":"","includeEvents":true}}',
-            { headers: { 'Authorization': 'Bearer ' + authToken } },
-          ),
+          () => axios.get('https://api.ecobee.com/1/thermostat?format=json&body=' + encodeURIComponent(JSON.stringify(body)), { headers: { 'Authorization': 'Bearer ' + authToken } }),
           'status check',
         );
         const queryData = queryRequest.data;
@@ -288,7 +300,11 @@ export class AwaySwitchAccessory {
           return this.CLIMATE_HOME;
         }
 
-        const events = queryData.thermostatList[0].events;
+        // Use the first thermostat from the response.
+        // When thermostatSerialNumbers is configured, only the requested thermostat is returned.
+        // When not configured (registered selection), we use the first thermostat on the account.
+        const thermostat = queryData.thermostatList[0];
+        const events = thermostat.events || [];
 
         if (events.length > 0) {
           const mostRecentEvent = events[0];
